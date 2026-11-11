@@ -1,0 +1,83 @@
+//Este código incluye únicamente los sensores IR
+//Código usado durante las primeras pruebas
+
+// ---------- Sensores infrarrojos ----------
+int IRD = 10;   // Sensor derecho   -> pin digital 10
+int IRC = 9;    // Sensor central   -> pin digital 9
+int IRI = 8;    // Sensor izquierdo -> pin digital 8
+
+// ---------- Driver de motores (puente H) ----------
+int IN1 = 7;    // Motor A, dirección 1 -> pin digital 7
+int IN2 = 5;    // Motor A, dirección 2 -> pin digital 5
+int ENA = 6;    // Motor A, habilitación -> pin digital 6
+int IN3 = 4;    // Motor B, dirección 1 -> pin digital 4
+int IN4 = 2;    // Motor B, dirección 2 -> pin digital 2
+int ENB = 3;    // Motor B, habilitación -> pin digital 3
+
+
+// ---------- Velocidades (0 a 255) ----------
+int velocidadA = 150;   // Motor A: 0 a 255
+int velocidadB = 150;   // Motor B: 0 a 255
+
+void setup() {
+  pinMode(IRD, INPUT);     // IRD como entrada (lee el sensor derecho)
+  pinMode(IRC, INPUT);     // IRC como entrada (lee el sensor central)
+  pinMode(IRI, INPUT);     // IRI como entrada (lee el sensor izquierdo)
+  pinMode(IN1, OUTPUT);    // IN1 como salida
+  pinMode(IN2, OUTPUT);    // IN2 como salida
+  pinMode(ENA, OUTPUT);    // ENA como salida
+  pinMode(IN3, OUTPUT);    // IN3 como salida
+  pinMode(IN4, OUTPUT);    // IN4 como salida
+  pinMode(ENB, OUTPUT);    // ENB como salida
+  Serial.begin(9600);
+}
+
+void loop() {
+
+
+  // Lectura de sensores (LOW = el sensor detecta la línea)
+  int centro    = digitalRead(IRC);
+  int derecha   = digitalRead(IRD);
+  int izquierda = digitalRead(IRI);
+
+  if (centro == LOW && derecha == HIGH && izquierda == HIGH) {
+    // Línea en el centro: AVANZAR (ambos motores hacia adelante)
+    analogWrite(ENA, velocidadA);   // Habilita motor A
+    digitalWrite(IN1, LOW);    // Motor A: IN1 = 0
+    digitalWrite(IN2, HIGH);   // Motor A: IN2 = 1 (adelante)
+
+    analogWrite(ENB, velocidadB);   // Habilita motor B
+    digitalWrite(IN3, HIGH);    // Motor B: IN3 = 1 (adelante)
+    digitalWrite(IN4, LOW);   // Motor B: IN4 = 0
+
+  } else if (centro == HIGH && derecha == LOW && izquierda == HIGH) {
+    // Línea a la derecha: GIRAR a la derecha (solo motor A avanza)
+    digitalWrite(ENA, velocidadA);   // Habilita motor A
+    digitalWrite(IN1, HIGH);    // Motor A: IN1 = 1 (adelante)
+    digitalWrite(IN2, LOW);   // Motor A: IN2 = 0
+
+    digitalWrite(ENB, 0);    // Deshabilita motor B
+    digitalWrite(IN3, LOW);    // Motor B: IN3 = 0
+    digitalWrite(IN4, LOW);    // Motor B: IN4 = 0 (detenido)
+
+  } else if (centro == HIGH && derecha == HIGH && izquierda == LOW) {
+    // Línea a la izquierda: GIRAR a la izquierda (solo motor B avanza)
+    digitalWrite(ENA, 0);    // Deshabilita motor A
+    digitalWrite(IN1, LOW);    // Motor A: IN1 = 0
+    digitalWrite(IN2, LOW);    // Motor A: IN2 = 0 (detenido)
+
+    digitalWrite(ENB, velocidadB);   // Habilita motor B
+    digitalWrite(IN3, LOW);    // Motor B: IN3 = 0
+    digitalWrite(IN4, HIGH);   // Motor B: IN4 = 1 (adelante)
+
+  } else {
+    // Cualquier otro caso (sin línea, o varios sensores activos): DETENER todo
+    digitalWrite(ENA, 0);    // Deshabilita motor A
+    digitalWrite(IN1, LOW);    // Motor A: IN1 = 0
+    digitalWrite(IN2, LOW);    // Motor A: IN2 = 0
+
+    digitalWrite(ENB, velocidadB);    // Deshabilita motor B
+    digitalWrite(IN3, LOW);    // Motor B: IN3 = 0
+    digitalWrite(IN4, LOW);    // Motor B: IN4 = 0
+  }
+}
