@@ -1,0 +1,156 @@
+//Este código prioriza la lectura del sensor ultrasónico
+
+// ---------- Sensores infrarrojos ----------
+int IRD = A0;   // Sensor derecho
+int IRC = A1;   // Sensor central
+int IRI = A2;   // Sensor izquierdo
+
+// ---------- Sensor ultrasónico (HC-SR04) ----------
+int TRIG = 9;
+int ECHO = 8;
+int distanciaObstaculo = 15;   // cm: si hay algo más cerca, reacciona
+
+// ---------- Driver de motores (puente H) ----------
+int IN1 = 7;
+int IN2 = 5;
+int ENA = 6;
+
+int IN3 = 4;
+int IN4 = 2;
+int ENB = 3;
+
+// ---------- Velocidades ----------
+int velocidadA = 150;
+int velocidadB = 150;
+
+// ---------- Umbral de deteccion ----------
+int umbral = 200;
+
+// ---------- Tiempos (ms) ----------
+int tiempoMediaVuelta = 700;
+int tiempoReversa = 1000;      // 1 segundo hacia atrás
+int tiempoPausa = 5000;        // 5 segundos detenido
+
+void setup() {
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(ENA, OUTPUT);
+
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+  pinMode(ENB, OUTPUT);
+
+  pinMode(TRIG, OUTPUT);
+  pinMode(ECHO, INPUT);
+}
+
+// ---------- Lectura del ultrasónico ----------
+// Devuelve la distancia en cm, o 0 si no hay eco (nada al alcance)
+int medirDistancia() {
+  digitalWrite(TRIG, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG, LOW);
+
+  long duracion = pulseIn(ECHO, HIGH, 30000);  // timeout 30 ms
+  if (duracion == 0) return 0;
+
+  return duracion * 0.034 / 2;
+}
+
+// ---------- Funciones de movimiento ----------
+void avanzar() {
+  analogWrite(ENA, velocidadA);
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+
+  analogWrite(ENB, velocidadB);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+}
+
+void retroceder() {
+  analogWrite(ENA, velocidadA);
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+
+  analogWrite(ENB, velocidadB);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+}
+
+void girarDerecha() {
+  analogWrite(ENA, velocidadA);
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+
+  analogWrite(ENB, 0);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+}
+
+void detener() {
+  analogWrite(ENA, 0);
+  analogWrite(ENB, 0);
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+}
+
+void mediaVuelta() {
+  detener();
+  delay(100);
+
+  analogWrite(ENA, velocidadA);
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+
+  analogWrite(ENB, velocidadB);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+
+  delay(tiempoMediaVuelta);
+
+  detener();
+  delay(100);
+}
+
+void obstaculo() {
+  retroceder();
+  delay(tiempoReversa);   // 1 segundo hacia atrás
+
+  detener();
+  delay(tiempoPausa);     // 5 segundos detenido
+}
+
+void loop() {
+
+  // 1) Prioridad: revisar obstáculo
+  int distancia = medirDistancia();
+  if (distancia > 0 && distancia <= distanciaObstaculo) {
+    obstaculo();
+    return;   // vuelve a empezar el loop
+  }
+
+  // 2) Lectura de sensores IR
+  int derecha = analogRead(IRD);
+  int centro = analogRead(IRC);
+  int izquierda = analogRead(IRI);
+
+  int C = (centro < umbral) ? LOW : HIGH;
+  int D = (derecha < umbral) ? LOW : HIGH;
+  int I = (izquierda < umbral) ? LOW : HIGH;
+
+  if (C == LOW && D == LOW && I == LOW) {
+    mediaVuelta();
+  }
+  else if (C == LOW && D == HIGH && I == HIGH) {
+    avanzar();
+  }
+  else if (C == HIGH && D == LOW && I == HIGH) {
+    girarDerecha();
+  }
+  else {}
+}
