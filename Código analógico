@@ -1,0 +1,32 @@
+//Este código está destinado a la calibración de los sensores
+
+
+// ---------- Sensores infrarrojos ----------
+int IRD = A0;  // Derecho
+int IRC = A1;  // Centro
+int IRI = A2;  // Izquierdo
+
+void setup() {
+
+  Serial.begin(9600);
+
+}
+
+void loop() {
+
+  int derecha = analogRead(IRD);
+  int centro = analogRead(IRC);
+  int izquierda = analogRead(IRI);
+
+  Serial.print("Derecho: ");
+  Serial.print(derecha);
+
+  Serial.print(" | Centro: ");
+  Serial.print(centro);
+
+  Serial.print(" | Izquierdo: ");
+  Serial.println(izquierda);
+
+  delay(1000);
+
+}
